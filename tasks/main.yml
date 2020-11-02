@@ -1,0 +1,166 @@
+---
+
+- name: Distribution Check
+  when: ansible_distribution != "Ubuntu"
+  fail:
+    msg: "Docker configuration only supported on Ubuntu hosts."
+
+- name: Set defaults
+  set_fact:
+    docker_service_state: "started"
+
+- name: Sysctl settings
+  sysctl:
+    name: vm.max_map_count
+    value: 262144
+    reload: yes
+
+########
+# Firewall configuration
+
+- name: Firewall Configuration for Docker (TCP/2376)
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: tcp
+    source: "{{ item }}"
+    destination_port: 2376
+  with_items: "{{ docker_mgmt_nets }}"
+  when: docker_mgmt_nets is defined
+
+- name: Firewall Configuration for Docker (TCP/2377)
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: tcp
+    source: "{{ item }}"
+    destination_port: 2377
+  with_items: "{{ docker_mgmt_nets }}"
+  when: docker_mgmt_nets is defined
+
+- name: Firewall Configuration for Docker (TCP/7946)
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: tcp
+    source: "{{ item }}"
+    destination_port: 7946
+  with_items: "{{ docker_mgmt_nets }}"
+  when: docker_mgmt_nets is defined
+
+- name: Firewall Configuration for Docker (UDP/7946)
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: udp
+    source: "{{ item }}"
+    destination_port: 7946
+  with_items: "{{ docker_mgmt_nets }}"
+  when: docker_mgmt_nets is defined
+
+- name: Firewall Configuration for Docker (UDP/4789)
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: udp
+    source: "{{ item }}"
+    destination_port: 4789
+  with_items: "{{ docker_mgmt_nets }}"
+  when: docker_mgmt_nets is defined
+
+- name: Save iptables rules
+  include_tasks: "{{ playbook_dir }}/lib/firewall-save.yml"
+
+########
+# Repo setup
+
+- name: Add docker repository key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add docker repositories/builds
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: yes
+
+- name: Force update of Apt cache
+  apt:
+    update_cache: yes
+  ignore_errors: yes
+  changed_when: false
+
+########
+# Remove packages
+
+- name: Remove packages
+  package:
+    name:
+      - docker.io
+    state: absent
+
+########
+# Add packages
+
+- name: Add packages
+  package:
+    name:
+      - docker-ce
+      - docker-ce-cli
+    state: present
+
+########
+# Daemon configuration
+
+- name: Configure Docker daemon
+  template:
+    dest: /etc/docker/daemon.json
+    src: daemon.json.j2
+    owner: root
+    group: root
+    mode: 0644
+  register: daemon_config
+
+- name: Trigger docker daemon restart
+  set_fact:
+    docker_service_state: "restarted"
+  when: daemon_config.changed
+
+########
+# Docker proxy configuration
+- name: Docker proxy
+  include_tasks: docker_proxy.yml
+
+########
+# Configure docker services
+
+- name: Reload services
+  command: "systemctl daemon-reload"
+  when: "docker_daemon_reload|default(false)"
+
+- name: Enable Docker service
+  service:
+    name: docker
+    state: "{{ docker_service_state }}"
+    enabled: true
+
+########
+# Docker user configuration
+
+- name: Allow users to access docker
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+  when: docker_users is defined
+
+########
+# Swarm configuration
+
+- name: Configure swarm
+  when: docker_swarm_configure | default(false)
+  include_tasks: swarm.yml
+
+...

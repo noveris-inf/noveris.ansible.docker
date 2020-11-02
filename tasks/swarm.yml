@@ -1,0 +1,26 @@
+---
+
+- name: Get swarm info
+  include_tasks: swarm_info.yml
+
+- name: Swarm init on master
+  when: docker_swarm_role is defined and docker_swarm_role == 'manager'
+  include_tasks: swarm_init.yml
+
+- name: Get swarm info
+  include_tasks: swarm_info.yml
+
+- name: Default to worker token
+  set_fact:
+    docker_swarm_join_token: "{{ docker_swarm_worker_token }}"
+
+- name: Use manager token
+  when: docker_swarm_role is defined and docker_swarm_role == "manager"
+  set_fact:
+    docker_swarm_join_token: "{{ docker_swarm_manager_token }}"
+
+- name: Join swarm
+  when: "docker_swarm_state.rc == 0 and docker_swarm_state.stdout != 'active'"
+  shell: "docker swarm join --token {{ docker_swarm_join_token }} {{ docker_swarm_join_address }}"
+
+...

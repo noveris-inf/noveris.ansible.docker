@@ -1,0 +1,48 @@
+---
+
+- name: docker swarm state
+  shell: "docker info 2>/dev/null | sed -n 's/^[[:space:]]*Swarm: \\(.*\\)$/\\1/p' "
+  register: docker_swarm_state
+  failed_when: false
+  ignore_errors: true
+  changed_when: false
+
+- name: docker swarm join token - manager
+  shell: "docker swarm join-token manager -q"
+  register: docker_swarm_manager_run
+  failed_when: false
+  ignore_errors: true
+  changed_when: false
+
+- name: docker swarm join token - worker
+  shell: "docker swarm join-token worker -q"
+  register: docker_swarm_worker_run
+  failed_when: false
+  ignore_errors: true
+  changed_when: false
+
+- name: Update tokens - manager
+  loop: "{{ play_hosts }}"
+  set_fact:
+    docker_swarm_manager_token: "{{ docker_swarm_manager_run.stdout }}"
+  when: docker_swarm_manager_run.rc == 0
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+
+- name: Update tokens - worker
+  loop: "{{ play_hosts }}"
+  set_fact:
+    docker_swarm_worker_token: "{{ docker_swarm_worker_run.stdout }}"
+  when: docker_swarm_worker_run.rc == 0
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+
+- name: Update join address
+  loop: "{{ play_hosts }}"
+  set_fact:
+    docker_swarm_join_address: "{{ ansible_ssh_host }}"
+  when: docker_swarm_manager_run.rc == 0
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+
+...
