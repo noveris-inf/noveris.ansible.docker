@@ -1,0 +1,36 @@
+---
+
+# Repo configuration
+- name: Add docker repository key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add docker repositories/builds
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: yes
+
+- name: Force update of Apt cache
+  apt:
+    update_cache: true
+  ignore_errors: true
+  changed_when: false
+
+# Remove packages
+- name: Remove packages
+  package:
+    name:
+      - docker.io
+    state: absent
+
+# Add packages
+- name: Add packages
+  package:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - python3-docker
+      - python3-distutils
+    state: present

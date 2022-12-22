@@ -1,0 +1,46 @@
+---
+
+- name: Firewall Configuration for Docker (TCP/2376)
+  ufw:
+    destination: in
+    rule: allow
+    proto: tcp
+    source: "{{ item }}"
+    destination_port: 2376
+  loop: "{{ docker_mgmt_nets|default([]) }}"
+
+- name: Firewall Configuration for Docker (TCP/2377)
+  ufw:
+    destination: in
+    rule: allow
+    proto: tcp
+    source: "{{ item }}"
+    destination_port: 2377
+  loop: "{{ docker_mgmt_nets|default([]) }}"
+
+- name: Firewall Configuration for Docker (TCP/7946)
+  ufw:
+    destination: in
+    rule: allow
+    proto: tcp
+    source: "{{ item }}"
+    destination_port: 7946
+  loop: "{{ docker_mgmt_nets|default([]) }}"
+
+- name: Firewall Configuration for Docker (UDP/7946)
+  ufw:
+    destination: in
+    rule: allow
+    proto: udp
+    source: "{{ item }}"
+    destination_port: 7946
+  loop: "{{ docker_mgmt_nets|default([]) }}"
+
+- name: Firewall Configuration for Docker (UDP/4789)
+  ufw:
+    destination: in
+    rule: allow
+    proto: udp
+    source: "{{ item }}"
+    destination_port: 4789
+  loop: "{{ docker_mgmt_nets|default([]) }}"

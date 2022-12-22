@@ -44,5 +44,3 @@
   when: docker_swarm_manager_run.rc == 0
   delegate_to: "{{ item }}"
   delegate_facts: true
-
-...
