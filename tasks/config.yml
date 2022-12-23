@@ -1,0 +1,66 @@
+---
+
+# Docker configuration
+- name: Configure Docker daemon
+  template:
+    dest: /etc/docker/daemon.json
+    src: daemon.json.j2
+    owner: root
+    group: root
+    mode: 0644
+  register: daemon_config
+
+- name: Trigger docker daemon restart
+  set_fact:
+    docker_service_state: "restarted"
+  when: daemon_config.changed
+
+# Containerd config
+- name: Generate containerd default config
+  shell: "containerd config default > /etc/containerd/config_pending"
+  register: containerd_config_candidate
+
+- name: patch pending config
+  command:
+    cmd: "sed -i -e '{{ item }}' /etc/containerd/config_pending"
+  loop:
+    - "s/SystemdCgroup = false/SystemdCgroup = true/"
+
+- name: Configure containerd daemon
+  copy:
+    remote_src: true
+    dest: /etc/containerd/config.toml
+    src: /etc/containerd/config_pending
+    owner: root
+    group: root
+    mode: 0644
+  register: daemon_config
+
+- name: Trigger containerd daemon restart
+  set_fact:
+    containerd_service_state: "restarted"
+  when: daemon_config.changed
+
+# Docker service directory config
+- name: Docker systemd service directory
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Proxy File
+  template:
+    src: docker_proxy.j2
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: docker_proxy_file
+
+- name: Trigger systemctl update
+  set_fact:
+    daemon_reload: true
+    docker_service_state: restarted
+  when: docker_proxy_file.changed

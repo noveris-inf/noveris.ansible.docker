@@ -8,7 +8,8 @@
 - name: Set defaults
   set_fact:
     docker_service_state: "started"
-    docker_daemon_reload: false
+    daemon_reload: false
+    containerd_service_state: "started"
 
 - name: Sysctl settings
   sysctl:
@@ -24,29 +25,20 @@
 - name: Package configuration
   include_tasks: packages.yml
 
-# Daemon configuration
-- name: Configure Docker daemon
-  template:
-    dest: /etc/docker/daemon.json
-    src: daemon.json.j2
-    owner: root
-    group: root
-    mode: 0644
-  register: daemon_config
-
-- name: Trigger docker daemon restart
-  set_fact:
-    docker_service_state: "restarted"
-  when: daemon_config.changed
-
-# Docker proxy configuration
-- name: Docker proxy
-  include_tasks: docker_proxy.yml
+# Docker configuration
+- name: Docker Configuration
+  include_tasks: config.yml
 
 # Configure docker services
 - name: Reload services
   command: "systemctl daemon-reload"
-  when: "docker_daemon_reload|default(false)"
+  when: "daemon_reload|default(false)"
+
+- name: Enable containerd service
+  service:
+    name: containerd
+    state: "{{ containerd_service_state }}"
+    enabled: true
 
 - name: Enable Docker service
   service:
@@ -67,5 +59,3 @@
 - name: Configure swarm
   when: docker_swarm_configure | default(false)
   include_tasks: swarm.yml
-
-...

@@ -31,6 +31,7 @@
     name:
       - docker-ce
       - docker-ce-cli
+      - containerd.io
       - python3-docker
       - python3-distutils
     state: present
