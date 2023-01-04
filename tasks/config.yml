@@ -8,12 +8,7 @@
     owner: root
     group: root
     mode: 0644
-  register: daemon_config
-
-- name: Trigger docker daemon restart
-  set_fact:
-    docker_service_state: "restarted"
-  when: daemon_config.changed
+  notify: "docker : reload services"
 
 # Containerd config
 - name: Generate containerd default config
@@ -34,33 +29,28 @@
     owner: root
     group: root
     mode: 0644
-  register: daemon_config
-
-- name: Trigger containerd daemon restart
-  set_fact:
-    containerd_service_state: "restarted"
-  when: daemon_config.changed
+  notify: "docker : reload services"
 
 # Docker service directory config
-- name: Docker systemd service directory
+- name: systemd service directories
   file:
-    path: /etc/systemd/system/docker.service.d
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: 0755
+  loop:
+    - /etc/systemd/system/docker.service.d
+    - /etc/systemd/system/containerd.service.d
 
 - name: Proxy File
   template:
-    src: docker_proxy.j2
-    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+    src: http_proxy.j2
+    dest: "{{ item }}"
     owner: root
     group: root
     mode: 0644
-  register: docker_proxy_file
-
-- name: Trigger systemctl update
-  set_fact:
-    daemon_reload: true
-    docker_service_state: restarted
-  when: docker_proxy_file.changed
+  loop:
+    - /etc/systemd/system/docker.service.d/http-proxy.conf
+    - /etc/systemd/system/containerd.service.d/http-proxy.conf
+  notify: "docker : reload services"

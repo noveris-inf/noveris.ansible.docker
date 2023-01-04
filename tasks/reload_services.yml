@@ -1,0 +1,17 @@
+---
+
+- name: systemctl daemon reload
+  command: "systemctl daemon-reload"
+  listen: "reload docker services"
+
+- name: restart containerd
+  service:
+    name: containerd
+    state: restarted
+  listen: "reload docker services"
+
+- name: restart docker
+  service:
+    name: docker
+    state: restarted
+  listen: "reload docker services"

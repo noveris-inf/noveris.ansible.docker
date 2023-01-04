@@ -5,12 +5,6 @@
   fail:
     msg: "Docker configuration only supported on Ubuntu hosts."
 
-- name: Set defaults
-  set_fact:
-    docker_service_state: "started"
-    daemon_reload: false
-    containerd_service_state: "started"
-
 - name: Sysctl settings
   sysctl:
     name: vm.max_map_count
@@ -30,20 +24,19 @@
   include_tasks: config.yml
 
 # Configure docker services
-- name: Reload services
-  command: "systemctl daemon-reload"
-  when: "daemon_reload|default(false)"
+- name: Flush Handlers
+  meta: flush_handlers
 
 - name: Enable containerd service
   service:
     name: containerd
-    state: "{{ containerd_service_state }}"
+    state: started
     enabled: true
 
 - name: Enable Docker service
   service:
     name: docker
-    state: "{{ docker_service_state }}"
+    state: started
     enabled: true
 
 # Docker user configuration
