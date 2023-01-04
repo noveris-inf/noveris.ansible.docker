@@ -5,6 +5,10 @@
   fail:
     msg: "Docker configuration only supported on Ubuntu hosts."
 
+# Consistent state before we start
+- name: Flush Handlers
+  meta: flush_handlers
+
 - name: Sysctl settings
   sysctl:
     name: vm.max_map_count
