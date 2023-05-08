@@ -34,4 +34,5 @@
       - containerd.io
       - python3-docker
       - python3-distutils
+      - docker-compose
     state: present
