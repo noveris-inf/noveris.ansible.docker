@@ -1,3 +1,5 @@
+---
+
 name: latest
 on:
   workflow_dispatch:

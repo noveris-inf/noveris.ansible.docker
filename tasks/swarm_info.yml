@@ -1,7 +1,9 @@
 ---
 
 - name: docker swarm state
-  shell: "docker info 2>/dev/null | sed -n 's/^[[:space:]]*Swarm: \\(.*\\)$/\\1/p' "
+  shell:
+    cmd: >-
+      docker info 2>/dev/null | sed -n 's/^[[:space:]]*Swarm: \\(.*\\)$/\\1/p'
   register: docker_swarm_state
   failed_when: false
   ignore_errors: true

@@ -21,4 +21,7 @@
 
 - name: Join swarm
   when: "docker_swarm_state.rc == 0 and docker_swarm_state.stdout != 'active'"
-  shell: "docker swarm join --token {{ docker_swarm_join_token }} {{ docker_swarm_join_address }}"
+  shell:
+    cmd: >-
+      docker swarm join --token {{ docker_swarm_join_token }}
+      {{ docker_swarm_join_address }}
