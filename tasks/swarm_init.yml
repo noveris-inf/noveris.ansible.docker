@@ -1,6 +1,9 @@
 ---
 
 - name: Swarm init
-  when: docker_swarm_worker_token is not defined and docker_swarm_manager_token is not defined
+  when:
+    - >-
+      docker_swarm_worker_token is not defined and
+      docker_swarm_manager_token is not defined
   shell: "docker swarm init"
   run_once: true
