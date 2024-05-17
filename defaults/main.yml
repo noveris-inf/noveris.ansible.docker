@@ -1,3 +1,29 @@
 ---
 
 docker_storage_driver: overlay2
+docker_mgmt_nets: []
+docker_users: []
+docker_vm_max_map_count: "262144"
+
+# Proxy configuration
+http_proxy: ''
+https_proxy: ''
+no_proxy: ''
+
+docker_prune_commands:
+  - docker image prune -f
+  - docker container prune -f
+
+docker_prune_script: |
+  #!/bin/bash
+
+  set -e
+  set -o pipefail
+
+  {% for command in docker_prune_commands %}
+  {{ command }}
+  {% endfor %}
+
+  exit 0
+
+docker_prune_schedule: ''

@@ -1,0 +1,25 @@
+---
+
+docker_prune_files:
+  - path: /etc/systemd/system/docker_prune.timer
+    content: |
+      [Unit]
+      Description=Docker Prune Timer
+
+      [Timer]
+      OnCalendar={{ docker_prune_schedule }}
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+  - path: /etc/systemd/system/docker_prune.service
+    content: |
+      [Unit]
+      Description=Docker Prune Service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/docker_prune
+  - path: /usr/local/bin/docker_prune
+    mode: "0755"
+    content: "{{ docker_prune_script }}"

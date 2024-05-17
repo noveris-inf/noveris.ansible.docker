@@ -12,8 +12,9 @@
 - name: Sysctl settings
   sysctl:
     name: vm.max_map_count
-    value: 262144
+    value: "{{ docker_vm_max_map_count }}"
     reload: true
+  when: "docker_vm_max_map_count != ''"
 
 # Firewall configuration
 - name: Firewall configuration
@@ -50,9 +51,11 @@
     groups: docker
     append: yes
   loop: "{{ docker_users }}"
-  when: docker_users is defined
 
 # Swarm configuration
 - name: Configure swarm
   when: docker_swarm_configure | default(false)
   include_tasks: swarm.yml
+
+- name: Prune schedule
+  ansible.builtin.include_tasks: prune.yml

@@ -1,0 +1,30 @@
+---
+
+- name: Copy docker prune files
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ docker_prune_files }}"
+  when: "docker_prune_schedule != ''"
+
+- name: Remove docker prune files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ docker_prune_files }}"
+  when: "docker_prune_schedule == ''"
+
+- name: systemd reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: docker prune timer
+  ansible.builtin.systemd:
+    enabled: true
+    state: restarted
+    name: docker_prune.timer
+  when: "docker_prune_schedule != ''"
+  ignore_errors: "{{ ansible_check_mode }}"
