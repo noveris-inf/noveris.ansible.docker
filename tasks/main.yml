@@ -1,10 +1,5 @@
 ---
 
-- name: Distribution Check
-  when: ansible_distribution != "Ubuntu"
-  fail:
-    msg: "Docker configuration only supported on Ubuntu hosts."
-
 # Consistent state before we start
 - name: Flush Handlers
   meta: flush_handlers
